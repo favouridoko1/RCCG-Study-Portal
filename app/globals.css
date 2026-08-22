@@ -14,13 +14,193 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ededed;
+    --foreground: #2f2e2e;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
+}
+
+
+
+/* ==========================================================
+   READER AREA
+========================================================== */
+
+.reader-area {
+  margin-left: 146px;
+  min-height: 100vh;
+  width: calc(100% - 146px);
+  position: relative;
+}
+
+/* ==========================================================
+   DOCUMENT STAGE
+========================================================== */
+
+.document-stage {
+  width: 100%;
+  min-height: calc(100vh - 33px);
+
+  padding: 32px 40px 40px;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* ==========================================================
+   DOCUMENT
+========================================================== */
+
+.document-page {
+  position: relative;
+
+  /*
+    Instead of the old fixed 318px,
+    allow the document to grow with the screen.
+  */
+  width: min(720px, calc(100vw - 260px));
+
+  min-height: 820px;
+  height: calc(100vh - 105px);
+
+  background: white;
+
+  border: 1px solid #e1e5e8;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+
+  overflow: hidden;
+}
+
+.document-content {
+  padding: 42px 52px 80px;
+}
+
+/* ==========================================================
+   DOCUMENT HEADING
+========================================================== */
+
+.document-heading {
+  border-bottom: 1px solid #e1e5e8;
+  padding-bottom: 13px;
+}
+
+.document-heading h2 {
+  margin: 0;
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 21px;
+  line-height: 1.25;
+
+  font-weight: 700;
+
+  color: #071c49;
+}
+
+/* ==========================================================
+   DOCUMENT BODY
+========================================================== */
+
+.document-body {
+  margin-top: 24px;
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  color: #202833;
+
+  /*
+    This is the biggest correction.
+  */
+  font-size: 12px;
+
+  line-height: 1.75;
+}
+
+.document-body p {
+  margin: 0 0 18px;
+}
+
+/* ==========================================================
+   QUOTE
+========================================================== */
+
+.document-body blockquote {
+  margin: 25px 0 27px;
+
+  min-height: 72px;
+
+  padding: 17px 20px;
+
+  display: flex;
+  align-items: center;
+
+  border-left: 3px solid #f4c85d;
+
+  background: #fafafa;
+}
+
+.document-body blockquote span {
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 11px;
+
+  line-height: 1.65;
+
+  font-style: italic;
+
+  color: #4b5563;
+}
+
+/* ==========================================================
+   PAGE FOOTER
+========================================================== */
+
+.document-footer {
+  position: absolute;
+
+  left: 0;
+  right: 0;
+
+  bottom: 32px;
+
+  padding: 0 52px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.document-footer button {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+
+  padding: 0;
+
+  border: 0;
+  background: transparent;
+
+  color: #071c49;
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 9px;
+
+  cursor: pointer;
+}
+
+.page-number {
+  color: #9aa1a8;
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 9px;
 }
