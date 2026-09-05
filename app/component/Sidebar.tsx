@@ -19,12 +19,12 @@ const navItems = [
         icon: <MdOutlineLibraryBooks />,
         path: "/my-shelf",
     },
-    {
-        label: "Account Settings",
-        icon: <FaRegUser />,
-        path: "/account-settings",
-        // path: "/"
-    },
+    // {
+    //     label: "Account Settings",
+    //     icon: <FaRegUser />,
+    //     path: "/account-settings",
+    //     // path: "/"
+    // },
 ];
 
 function Sidebar() {
@@ -52,7 +52,6 @@ function Sidebar() {
                 <h1 className="text-center text-xl font-bold text-[#071c49]">
                     Study Portal
                 </h1>
-
                 <p className="mt-1 flex items-center gap-1 text-xs font-medium text-slate-700">
                     <MdLockOutline />
                     Secure Session Active

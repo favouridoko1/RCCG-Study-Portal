@@ -3,12 +3,44 @@
 import Navbar from "./component/Navbar";
 import Sidebar from "./component/Sidebar";
 import { MdOutlineLibraryBooks, MdOutlineVerifiedUser } from "react-icons/md";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IoBookOutline, IoSettingsOutline } from "react-icons/io5";
-import { FaRegUser } from "react-icons/fa";
-import { GoHomeFill } from "react-icons/go";
+import { RiArrowRightLine } from "react-icons/ri";
+import { useCartStore } from "./store/cartStore";
+// const materials = [
+//   {
+//     title: "Sunday School Guide 2025",
+//     subtitle: "Adult Edition",
+//     price: "€12.99",
+//     tag: "NEW",
+//     type: "book",
+//     action: "Add to Cart",
+//   },
+//   {
+//     title: "Workers in Training Manual",
+//     subtitle: "Rev 2.4",
+//     price: "",
+//     type: "training",
+//     action: "Read Now",
+//     href: "/reader/workers-in-training",
+//   },
+//   {
+//     title: "Ministerial Ethics Guide",
+//     subtitle: "Leadership Series",
+//     price: "€15.00",
+//     type: "ethics",
+//     action: "Add to Cart",
+//   },
+//   {
+//     title: "House Fellowship Manual",
+//     subtitle: "2024/2025",
+//     price: "€8.50",
+//     type: "manual",
+//     action: "Add to Cart",
+//   },
 
+// ];
 const materials = [
   {
     title: "Sunday School Guide 2025",
@@ -40,8 +72,67 @@ const materials = [
     type: "manual",
     action: "Add to Cart",
   },
+  {
+    title: "Foundation for Christian Living",
+    subtitle: "New Believers Edition",
+    price: "€10.99",
+    type: "book",
+    action: "Add to Cart",
+  },
+  {
+    title: "RCCG Workers' Manual",
+    subtitle: "Workers in the Vineyard",
+    price: "",
+    type: "training",
+    action: "Read Now",
+    href: "/reader/workers-manual",
+  },
+  {
+    title: "Leadership Development Guide",
+    subtitle: "Ministers & Leaders",
+    price: "€14.50",
+    type: "ethics",
+    action: "Add to Cart",
+  },
+  {
+    title: "House Fellowship Leaders Guide",
+    subtitle: "Leadership Edition",
+    price: "",
+    type: "manual",
+    action: "Read Now",
+    href: "/reader/house-fellowship-leaders",
+  },
+  {
+    title: "Daily Devotional 2025",
+    subtitle: "Open Heaven Edition",
+    price: "€9.99",
+    tag: "POPULAR",
+    type: "book",
+    action: "Add to Cart",
+  },
+  {
+    title: "Evangelism & Soul Winning",
+    subtitle: "Workers Training Series",
+    price: "",
+    type: "training",
+    action: "Read Now",
+    href: "/reader/evangelism-soul-winning",
+  },
+  {
+    title: "Christian Family Handbook",
+    subtitle: "Marriage & Family Series",
+    price: "€11.50",
+    type: "manual",
+    action: "Add to Cart",
+  },
+  {
+    title: "Ministerial Conduct & Discipline",
+    subtitle: "Leadership Series",
+    price: "€13.99",
+    type: "ethics",
+    action: "Add to Cart",
+  },
 ];
-
 function MaterialImage({ type }: { type: string }) {
   if (type === "book") {
     return (
@@ -92,6 +183,8 @@ function MaterialImage({ type }: { type: string }) {
 
 export default function Home() {
   const router = useRouter();
+  const [showAll, setShowAll] = useState(false);
+  const addToCart = useCartStore((state) => state.addToCart);
   useEffect(() => {
     const authenticated =
       sessionStorage.getItem("rccg_authenticated");
@@ -104,6 +197,11 @@ export default function Home() {
   const handleClick = (path: string) => {
     router.push(path);
   };
+
+  const visibleMaterials = showAll
+    ? materials
+    : materials.slice(0, 4);
+
   return (
     <main className="min-h-screen bg-[#eef1f4] text-[#071c49]">
       <Sidebar />
@@ -111,7 +209,6 @@ export default function Home() {
       <div className="ml-0 pt-14.5 pb-20 lg:ml-53.75 lg:pt-12 lg:pb-0">
         <div className="mx-auto w-full max-w-300 px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-9">
           <section className="grid grid-cols-1 gap-5 lg:grid-cols-[2fr_1fr]">
-            {/* Hero */}
             <div className="relative min-h-67.5 overflow-hidden rounded-lg bg-linear-to-br from-[#182851] to-[#00143f] px-5 py-7 shadow-md sm:px-7 sm:py-8 lg:min-h-64.5">
               <div className="max-w-150">
                 <h1 className="text-[32px] font-bold leading-[1.1] tracking-tight text-white sm:text-[38px] lg:text-[40px]">
@@ -158,19 +255,26 @@ export default function Home() {
               <h2 className="text-[19px] font-bold text-[#071c49] sm:text-[21px]">
                 Featured Study Materials
               </h2>
-              <button className="shrink-0 text-xs font-medium text-[#765313] hover:underline">
-                View All →
+              <button
+                onClick={() => setShowAll((prev) => !prev)}
+                className="flex shrink-0 cursor-pointer items-center gap-px text-xs font-medium text-[#765313] transition hover:text-[#5f430f]"
+              >
+                {showAll ? "Show Less" : "View All"}
+                <RiArrowRightLine
+                  size={16}
+                  className={`transition-transform duration-200 ${showAll ? "rotate-90" : ""
+                    }`}
+                />
               </button>
             </div>
             <div className="mt-3 grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {materials.map((material) => (
+              {visibleMaterials.map((material) => (
                 <article
                   key={material.title}
                   className="overflow-hidden rounded-[5px] border border-slate-300 bg-white p-3 shadow-sm"
                 >
                   <div className="relative overflow-hidden rounded-xs">
                     <MaterialImage type={material.type} />
-
                     {material.tag && (
                       <span className="absolute bottom-2 left-2 rounded-full bg-[#ffd477] px-2 py-0.5 text-[10px] font-bold text-[#765313]">
                         {material.tag}
@@ -187,6 +291,15 @@ export default function Home() {
                     onClick={() => {
                       if (material.action === "Read Now" && material.href) {
                         router.push(material.href);
+                        return;
+                      }
+                      if (material.action === "Add to Cart") {
+                        addToCart({
+                          title: material.title,
+                          subtitle: material.subtitle,
+                          price: material.price,
+                          type: material.type,
+                        });
                       }
                     }}
                     className={`mt-3 w-full cursor-pointer rounded-[9px] py-2 text-[11px] font-bold transition ${material.action === "Read Now"
