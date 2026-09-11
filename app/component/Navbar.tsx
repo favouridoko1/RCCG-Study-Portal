@@ -13,7 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useCartStore } from "../store/cartStore";
 
-function Navbar() {
+function Navbar({ user }: { user?: any }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -22,39 +22,39 @@ function Navbar() {
   const cartItems = useCartStore((state) => state.items);
   const cartCount = cartItems.length;
 
- const handleLogout = async () => {
-  try {
-    const response = await fetch("/api/auth/logout", {
-      method: "POST",
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      toast.error("Unable to sign out", {
-        description:
-          result.message || "Something went wrong. Please try again.",
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
       });
-      return;
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error("Unable to sign out", {
+          description:
+            result.message || "Something went wrong. Please try again.",
+        });
+        return;
+      }
+
+      setProfileOpen(false);
+      setMenuOpen(false);
+
+      toast.success("Signed out successfully!", {
+        description:
+          "You have been securely signed out of the RCCG Study Portal.",
+      });
+
+      router.replace("/auth/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+
+      toast.error("Unable to sign out", {
+        description: "Something went wrong. Please try again.",
+      });
     }
-
-    setProfileOpen(false);
-    setMenuOpen(false);
-
-    toast.success("Signed out successfully!", {
-      description:
-        "You have been securely signed out of the RCCG Study Portal.",
-    });
-
-    router.replace("/auth/login");
-  } catch (error) {
-    console.error("Logout error:", error);
-
-    toast.error("Unable to sign out", {
-      description: "Something went wrong. Please try again.",
-    });
-  }
-};
+  };
 
   return (
     <>
@@ -105,17 +105,26 @@ function Navbar() {
             >
               <FaRegUser />
             </button>
+
             {profileOpen && (
-              <div className="absolute right-0 top-11 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-                {/* Dropdown Header */}
-                <div className="border-b border-slate-100 px-4 py-3">
-                  <p className="text-xs font-bold text-[#071c49]">
-                    My Account
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-slate-400">
-                    Manage your portal account
-                  </p>
+              <div className="absolute right-0 top-11 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                {/* User Information */}
+                <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e8edf5] text-[#00256f]">
+                    <FaRegUser size={17} />
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-[#071c49]">
+                      {user?.name || user?.username || "User"}
+                    </p>
+
+                    <p className="mt-0.5 truncate text-[11px] text-slate-400">
+                      {user?.email || "No email available"}
+                    </p>
+                  </div>
                 </div>
+
                 {/* Account */}
                 <button
                   onClick={() => {
@@ -127,18 +136,21 @@ function Navbar() {
                   <FaRegUser size={14} />
                   Account
                 </button>
+
                 {/* Account Settings */}
                 <button
                   onClick={() => {
                     setProfileOpen(false);
-                    // router.push("/account/settings");
+                    router.push("/account/settings");
                   }}
                   className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-[#00256f]"
                 >
                   <IoSettingsOutline size={15} />
                   Account Settings
                 </button>
+
                 <div className="mx-3 border-t border-slate-100" />
+
                 {/* Logout */}
                 <button
                   onClick={handleLogout}

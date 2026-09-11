@@ -29,3 +29,16 @@ model Session {
   expiresAt TimestamptzString
   createdAt TimestamptzString @default(now())
 }
+
+model Material {
+  id        Int      @id @default(autoincrement())
+  title     String
+  subtitle  String
+  price     String?
+  tag       String?
+  type      String
+  action    String
+  href      String?
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+}
