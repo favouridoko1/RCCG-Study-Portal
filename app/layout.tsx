@@ -44,6 +44,9 @@ export const metadata: Metadata = {
   title: "Rccg House Fellowship Portal",
   description:
     "A centralized digital platform for managing RCCG House Fellowships, connecting members, coordinating activities, and providing fellowship resources and updates",
+   icons: {
+  icon: '/rccglogo.png',  // ✅ correct
+},   
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
