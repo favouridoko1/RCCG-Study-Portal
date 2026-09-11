@@ -17,7 +17,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { loginUser } from "@/app/lib/auth";
 
 const loginSchema = z.object({
   email: z
@@ -61,32 +60,46 @@ function LoginPage() {
       password: "",
     },
   });
-const onSubmit = async (data: LoginFormData) => {
-  try {
-    setIsLoading(true);
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      setIsLoading(true);
 
-    console.log("Login email:", data.email);
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
+      });
 
-    // Simulate authentication delay
-    await new Promise((resolve) =>
-      setTimeout(resolve, 1000)
-    );
+      const result = await response.json();
 
-    loginUser();
+      if (!response.ok) {
+        toast.error("Unable to sign in", {
+          description:
+            result.message || "Invalid email or password.",
+        });
+        return;
+      }
 
-    toast.success("Signed in successfully!", {
-      description: "Welcome back to the RCCG Study Portal.",
-    });
+      toast.success("Signed in successfully!", {
+        description: "Welcome back to the RCCG Study Portal.",
+      });
 
-    router.replace("/");
-  } catch (error) {
-    toast.error("Unable to sign in", {
-      description: "Please try again.",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+      router.replace("/");
+    } catch (error) {
+      console.error("Login error:", error);
+
+      toast.error("Unable to sign in", {
+        description: "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <div className="mx-auto flex min-h-screen flex-col items-center justify-center md:max-w-[50%] lg:max-w-103.5">
       <form
@@ -101,11 +114,9 @@ const onSubmit = async (data: LoginFormData) => {
             width={60}
             height={60}
           />
-
           <h4 className="text-lg font-semibold">
             RCCG Europe
           </h4>
-
           <p className="text-sm">
             STUDY PORTAL
           </p>
@@ -130,7 +141,6 @@ const onSubmit = async (data: LoginFormData) => {
           error={errors.password?.message}
         />
         <div className="flex items-center justify-between gap-8 text-xs">
-
           <label className="flex cursor-pointer items-center gap-1">
             <input
               type="checkbox"
@@ -149,10 +159,10 @@ const onSubmit = async (data: LoginFormData) => {
         </div>
         <Button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isLoading}
           className="flex items-center gap-1 rounded-sm text-white"
         >
-          {isSubmitting ? (
+          {isLoading ? (
             "Signing in..."
           ) : (
             <>

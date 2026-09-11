@@ -13,7 +13,7 @@ import Button from "@/app/reuseable/Button";
 import { MdOutlineVerifiedUser } from "react-icons/md";
 import { RiArrowRightLongLine } from "react-icons/ri";
 import { useRouter } from "next/navigation";
-import { loginUser } from "@/app/lib/auth";
+
 const signupSchema = z.object({
   fullname: z
     .string()
@@ -24,7 +24,6 @@ const signupSchema = z.object({
     .string()
     .trim()
     .email("Please enter a valid email address"),
-
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -33,7 +32,6 @@ const signupSchema = z.object({
 });
 
 type SignupFormData = z.infer<typeof signupSchema>;
-
 const Signup: React.FC = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
@@ -50,46 +48,42 @@ const Signup: React.FC = () => {
       password: "",
     },
   });
-  // const onSubmit = async (data: SignupFormData) => {
-  //   try {
-  //     console.log("Signup data:", data);
-  //     await new Promise((resolve) => setTimeout(resolve, 1000));
-  //     navigate.push("/");
-  //     toast.success("Account created successfully!", {
-  //       description: "Welcome to the RCCG Secure Study Portal.",
-  //     });
-
-  //   } catch (error) {
-  //     console.error("Signup failed:", error);
-
-  //     toast.error("Signup failed", {
-  //       description: "Something went wrong. Please try again.",
-  //     });
-  //   }
-  // };
   const onSubmit = async (data: SignupFormData) => {
   try {
     setIsLoading(true);
 
-    console.log("Signup email:", data.email);
-
-    // Simulate account creation delay
-    await new Promise((resolve) =>
-      setTimeout(resolve, 1000)
-    );
-
-    loginUser();
-
-    toast.success("Account created successfully!", {
-      description:
-        "Welcome to the RCCG Study Portal.",
+    const response = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: data.fullname,
+        email: data.email,
+        password: data.password,
+      }),
     });
 
-    router.replace("/");
+    const result = await response.json();
+
+    if (!response.ok) {
+      toast.error("Registration failed", {
+        description:
+          result.message || "Something went wrong. Please try again.",
+      });
+      return;
+    }
+
+    toast.success("Account created successfully!", {
+      description: "Welcome to the RCCG Study Portal.",
+    });
+
+    router.replace("/auth/login");
   } catch (error) {
-    toast.error("Signup failed", {
-      description:
-        "Something went wrong. Please try again.",
+    console.error("Registration error:", error);
+
+    toast.error("Registration failed", {
+      description: "Something went wrong. Please try again.",
     });
   } finally {
     setIsLoading(false);
@@ -143,10 +137,10 @@ const Signup: React.FC = () => {
         />
         <Button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isLoading}
           className="text-white"
         >
-          {isSubmitting ? "Creating Account..." : <span className="flex items-center gap-1">Continue<RiArrowRightLongLine /></span>}
+          {isLoading ? "Creating Account..." : <span className="flex items-center gap-1">Continue<RiArrowRightLongLine /></span>}
         </Button>
         <p className="text-center text-sm">
           Already have an account?{" "}

@@ -6,8 +6,7 @@ import rccglogo from "../../public/rccglogo.png";
 import { MdLockOutline } from "react-icons/md";
 import { GoHomeFill } from "react-icons/go";
 import { MdOutlineLibraryBooks } from "react-icons/md";
-import { FaRegUser } from "react-icons/fa6";
-import { logoutUser } from "@/app/lib/auth";
+
 const navItems = [
     {
         label: "Home",
@@ -30,11 +29,24 @@ const navItems = [
 function Sidebar() {
     const router = useRouter();
 
-    const handleLogout = () => {
-        logoutUser();
+    // const handleLogout = async () => {
+    //     try {
+    //         const response = await fetch("/api/auth/logout", {
+    //             method: "POST",
+    //         });
 
-        router.replace("/auth/login");
-    };
+    //         const result = await response.json();
+
+    //         if (!response.ok) {
+    //             console.error("Logout failed:", result.message);
+    //             return;
+    //         }
+
+    //         router.replace("/auth/login");
+    //     } catch (error) {
+    //         console.error("Logout error:", error);
+    //     }
+    // };
     const pathname = usePathname();
 
     return (
