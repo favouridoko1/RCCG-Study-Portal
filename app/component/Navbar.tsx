@@ -71,12 +71,12 @@ function Navbar({ user }: { user?: any }) {
           >
             My Shelf
           </button>
-          <button
+          {/* <button
             onClick={() => router.push("/account")}
             className="cursor-pointer text-xs font-medium text-blue-300 transition hover:text-white"
           >
             Account
-          </button>
+          </button> */}
           <button
             aria-label="Search"
             className="cursor-pointer text-xl text-white transition hover:text-[#ffd477]"
@@ -138,7 +138,7 @@ function Navbar({ user }: { user?: any }) {
                 </button>
 
                 {/* Account Settings */}
-                <button
+                {/* <button
                   onClick={() => {
                     setProfileOpen(false);
                     router.push("/account/settings");
@@ -147,7 +147,7 @@ function Navbar({ user }: { user?: any }) {
                 >
                   <IoSettingsOutline size={15} />
                   Account Settings
-                </button>
+                </button> */}
 
                 <div className="mx-3 border-t border-slate-100" />
 

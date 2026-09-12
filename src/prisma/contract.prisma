@@ -10,6 +10,7 @@ model User {
   sessions     Session[]
   cart         Cart?
   orders       Order[]
+  readingProgress ReadingProgress[]
   createdAt    TimestamptzString @default(now())
   updatedAt    temporal.updatedAtString()
 }
@@ -33,21 +34,22 @@ model Session {
 }
 
 model Material {
-  id          Int      @id @default(autoincrement())
-  title       String
-  subtitle    String
-  price       String?
-  tag         String?
-  type        String
-  action      String
-  href        String?
-  imageUrl    String?
-  cartItems   CartItem[]
-  orderItems  OrderItem[]
-  createdAt   TimestamptzString @default(now())
-  updatedAt   temporal.updatedAtString()
+  id             Int      @id @default(autoincrement())
+  title          String
+  slug           String? @unique
+  subtitle       String
+  price          String?
+  tag            String?
+  type           String
+  action         String
+  href           String?
+  imageUrl       String?
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+  readingProgress ReadingProgress[]
+  createdAt      TimestamptzString @default(now())
+  updatedAt      temporal.updatedAtString()
 }
-
 model Cart {
   id        Int        @id @default(autoincrement())
   user      User       @relation(fields: [userId], references: [id])
@@ -96,4 +98,20 @@ model OrderItem {
   quantity   Int
   createdAt  TimestamptzString @default(now())
   updatedAt  temporal.updatedAtString()
+}
+
+model ReadingProgress {
+  id           Int        @id @default(autoincrement())
+  user         User       @relation(fields: [userId], references: [id])
+  userId       Int
+  material     Material   @relation(fields: [materialId], references: [id])
+  materialId   Int
+  currentPage  Int        @default(1)
+  totalPages   Int
+  progress    Int         @default(0)
+  lastReadAt   TimestamptzString @default(now())
+  createdAt    TimestamptzString @default(now())
+  updatedAt    temporal.updatedAtString()
+
+  @@unique([userId, materialId])
 }

@@ -1,7 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useParams, useRouter } from "next/navigation";
 import { IoMdCloudDone, IoMdLock } from "react-icons/io";
 import {
   FiArrowLeft,
@@ -11,10 +16,8 @@ import {
   FiFlag,
   FiMenu,
   FiMoon,
-  FiMoreVertical,
   FiSearch,
   FiSun,
-  FiType,
   FiX,
 } from "react-icons/fi";
 
@@ -22,6 +25,18 @@ type Chapter = {
   id: string;
   title: string;
   page: number;
+};
+
+type ReadingProgress = {
+  id: number;
+  userId: number;
+  materialId: number;
+  currentPage: number;
+  totalPages: number;
+  progress: number;
+  lastReadAt: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 const chapters: Chapter[] = [
@@ -52,16 +67,177 @@ const chapters: Chapter[] = [
   },
 ];
 
-function WorkersInTrainingReader() {
+function ReaderPage() {
   const router = useRouter();
-
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   const [activeChapter, setActiveChapter] = useState(2);
   const [search, setSearch] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   const [showMobileToc, setShowMobileToc] = useState(false);
   const [fontScale, setFontScale] = useState(1);
+  const [materialId, setMaterialId] = useState<number | null>(null);
+
+  const materialIdRef = useRef<number | null>(null);
 
   const active = chapters[activeChapter];
+
+  useEffect(() => {
+  const loadReadingProgress = async () => {
+    try {
+      const materialResponse = await fetch(
+        `/api/materials/${encodeURIComponent(slug)}`,
+      );
+
+      if (!materialResponse.ok) {
+        console.error(
+          "Failed to load material:",
+          materialResponse.status,
+        );
+        return;
+      }
+
+      const materialData = await materialResponse.json();
+
+      if (!materialData.success || !materialData.material) {
+        console.error(
+          "Material request was unsuccessful:",
+          materialData,
+        );
+        return;
+      }
+
+      const id = Number(materialData.material.id);
+
+      if (!id || Number.isNaN(id)) {
+        console.error(
+          "Invalid material ID:",
+          materialData.material.id,
+        );
+        return;
+      }
+
+      materialIdRef.current = id;
+      setMaterialId(id);
+
+      console.log(
+        "Reader material:",
+        materialData.material.title,
+      );
+      console.log("Reader material ID:", id);
+
+      const progressResponse = await fetch(
+        `/api/reading-progress?materialId=${id}`,
+      );
+
+      if (!progressResponse.ok) {
+        console.error(
+          "Failed to load reading progress:",
+          progressResponse.status,
+        );
+        return;
+      }
+
+      const progressData = await progressResponse.json();
+
+      console.log(
+        "Reading progress response:",
+        progressData,
+      );
+
+      if (
+        !progressData.success ||
+        !progressData.progress
+      ) {
+        return;
+      }
+
+      const progress: ReadingProgress =
+        progressData.progress;
+
+      const closestChapterIndex = chapters.reduce(
+        (closestIndex, chapter, index) => {
+          if (chapter.page <= progress.currentPage) {
+            return index;
+          }
+
+          return closestIndex;
+        },
+        0,
+      );
+
+      setActiveChapter(closestChapterIndex);
+    } catch (error) {
+      console.error(
+        "Load reading progress error:",
+        error,
+      );
+    }
+  };
+
+  if (!slug) {
+    return;
+  }
+
+  loadReadingProgress();
+}, [slug]);
+
+  const saveReadingProgress = async (page: number) => {
+    const id = materialIdRef.current;
+
+    if (!id) {
+      console.error(
+        "Cannot save reading progress: material ID is not available.",
+      );
+      return;
+    }
+
+    console.log("Saving reading progress:", {
+      materialId: id,
+      currentPage: page,
+      totalPages: 210,
+    });
+
+    try {
+      const response = await fetch(
+        "/api/reading-progress",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            materialId: id,
+            currentPage: page,
+            totalPages: 210,
+          }),
+        },
+      );
+
+      const result = await response.json();
+
+      console.log("Save progress response:", {
+        status: response.status,
+        result,
+      });
+
+      if (!response.ok) {
+        console.error(
+          "Failed to save reading progress.",
+        );
+        return;
+      }
+
+      console.log(
+        "Reading progress saved successfully.",
+      );
+    } catch (error) {
+      console.error(
+        "Save reading progress error:",
+        error,
+      );
+    }
+  };
 
   const filteredChapters = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -75,60 +251,74 @@ function WorkersInTrainingReader() {
     );
   }, [search]);
 
-  const goToChapter = (index: number) => {
+  const goToChapter = async (index: number) => {
     setActiveChapter(index);
     setShowMobileToc(false);
+
+    await saveReadingProgress(chapters[index].page);
   };
 
-  const previousPage = () => {
+  const previousPage = async () => {
     if (activeChapter > 0) {
-      setActiveChapter((current) => current - 1);
+      const previousChapter = activeChapter - 1;
+
+      setActiveChapter(previousChapter);
+
+      await saveReadingProgress(
+        chapters[previousChapter].page,
+      );
     }
   };
 
-  const nextPage = () => {
+  const nextPage = async () => {
     if (activeChapter < chapters.length - 1) {
-      setActiveChapter((current) => current + 1);
+      const nextChapter = activeChapter + 1;
+
+      setActiveChapter(nextChapter);
+
+      await saveReadingProgress(
+        chapters[nextChapter].page,
+      );
     }
   };
 
   return (
     <main
-      className={`min-h-screen ${
-        darkMode
+      className={`min-h-screen ${darkMode
           ? "bg-[#111827] text-slate-100"
           : "bg-[#f4f6f8] text-[#071c49]"
-      }`}
+        }`}
     >
       {/* ============================================================
           DESKTOP SIDEBAR
       ============================================================ */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 hidden w-55.75 border-r lg:block ${
-          darkMode
+        className={`fixed inset-y-0 left-0 z-40 hidden w-55.75 border-r lg:block ${darkMode
             ? "border-slate-700 bg-[#172033]"
             : "border-slate-200 bg-[#f1f4f6]"
-        }`}
+          }`}
       >
         {/* TABLE OF CONTENTS TITLE */}
         <div
-          className={`flex h-11 items-center gap-2 border-b px-5 ${
-            darkMode
+          className={`flex h-11 items-center gap-2 border-b px-5 ${darkMode
               ? "border-slate-700"
               : "border-slate-200"
-          }`}
+            }`}
         >
           <FiBookOpen
             className={
-              darkMode ? "text-slate-300" : "text-[#071c49]"
+              darkMode
+                ? "text-slate-300"
+                : "text-[#071c49]"
             }
             size={12}
           />
 
           <span
-            className={`font-serif text-[11px] font-bold ${
-              darkMode ? "text-slate-100" : "text-[#071c49]"
-            }`}
+            className={`font-serif text-[11px] font-bold ${darkMode
+                ? "text-slate-100"
+                : "text-[#071c49]"
+              }`}
           >
             Table of Contents
           </span>
@@ -136,18 +326,16 @@ function WorkersInTrainingReader() {
 
         {/* SEARCH */}
         <div
-          className={`border-b p-3 ${
-            darkMode
+          className={`border-b p-3 ${darkMode
               ? "border-slate-700"
               : "border-slate-200"
-          }`}
+            }`}
         >
           <div
-            className={`flex h-8 items-center gap-2 rounded border px-2.5 ${
-              darkMode
+            className={`flex h-8 items-center gap-2 rounded border px-2.5 ${darkMode
                 ? "border-slate-600 bg-[#111827]"
                 : "border-slate-200 bg-white"
-            }`}
+              }`}
           >
             <FiSearch
               size={12}
@@ -156,13 +344,14 @@ function WorkersInTrainingReader() {
 
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) =>
+                setSearch(event.target.value)
+              }
               placeholder="Search inside book..."
-              className={`min-w-0 flex-1 bg-transparent text-[10px] outline-none ${
-                darkMode
+              className={`min-w-0 flex-1 bg-transparent text-[10px] outline-none ${darkMode
                   ? "text-slate-200 placeholder:text-slate-500"
                   : "text-slate-600 placeholder:text-slate-400"
-              }`}
+                }`}
             />
           </div>
         </div>
@@ -174,19 +363,21 @@ function WorkersInTrainingReader() {
               (item) => item.id === chapter.id,
             );
 
-            const selected = activeChapter === index;
+            const selected =
+              activeChapter === index;
 
             return (
               <button
                 key={chapter.id}
-                onClick={() => goToChapter(index)}
-                className={`block w-full border-l-2 px-5 py-2.5 text-left font-serif text-[10px] leading-4 transition ${
-                  selected
+                onClick={() =>
+                  goToChapter(index)
+                }
+                className={`block w-full border-l-2 px-5 py-2.5 text-left font-serif text-[10px] leading-4 transition ${selected
                     ? "border-[#00256f] bg-[#00256f] text-white"
                     : darkMode
                       ? "border-transparent text-slate-400 hover:bg-slate-800 hover:text-slate-100"
                       : "border-transparent text-slate-600 hover:bg-slate-200"
-                }`}
+                  }`}
               >
                 {chapter.title}
               </button>
@@ -203,18 +394,19 @@ function WorkersInTrainingReader() {
             HEADER
         ========================================================== */}
         <header
-          className={`fixed left-0 right-0 top-0 z-30 h-12 border-b lg:left-55.75 ${
-            darkMode
+          className={`fixed left-0 right-0 top-0 z-30 h-12 border-b lg:left-55.75 ${darkMode
               ? "border-slate-700 bg-[#111827]"
               : "border-slate-200 bg-white"
-          }`}
+            }`}
         >
           <div className="relative flex h-full items-center justify-between px-3 sm:px-4">
             {/* LEFT */}
             <div className="flex items-center gap-2">
               {/* MOBILE MENU */}
               <button
-                onClick={() => setShowMobileToc(true)}
+                onClick={() =>
+                  setShowMobileToc(true)
+                }
                 className="rounded p-1.5 text-slate-500 hover:bg-slate-100 lg:hidden"
                 aria-label="Open table of contents"
               >
@@ -224,11 +416,10 @@ function WorkersInTrainingReader() {
               {/* EXIT */}
               <button
                 onClick={() => router.back()}
-                className={`flex items-center gap-1.5 cursor-pointer rounded border px-2.5 py-1.5 text-[9px] font-medium transition ${
-                  darkMode
+                className={`flex cursor-pointer items-center gap-1.5 rounded border px-2.5 py-1.5 text-[9px] font-medium transition ${darkMode
                     ? "border-slate-600 text-slate-200 hover:bg-slate-800"
                     : "border-slate-300 text-[#071c49] hover:bg-slate-100"
-                }`}
+                  }`}
               >
                 <FiArrowLeft size={10} />
                 <span>Exit Reader</span>
@@ -238,60 +429,66 @@ function WorkersInTrainingReader() {
             {/* CENTER TITLE */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
               <h1
-                className={`whitespace-nowrap text-lg font-serif text-[13px] font-bold leading-4 ${
-                  darkMode ? "text-slate-100" : "text-[#071c49]"
-                }`}
+                className={`whitespace-nowrap font-serif text-[13px] font-bold leading-4 ${darkMode
+                    ? "text-slate-100"
+                    : "text-[#071c49]"
+                  }`}
               >
                 The Redeemed Order
               </h1>
 
               <div
-                className={`flex items-center justify-center gap-1 text-[10px] ${
-                  darkMode ? "text-slate-500" : "text-slate-500"
-                }`}
+                className={`flex items-center justify-center gap-1 text-[10px] ${darkMode
+                    ? "text-slate-500"
+                    : "text-slate-500"
+                  }`}
               >
-                {/* <span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> */}
-                <IoMdLock/>
+                <IoMdLock />
                 Secure Session Active
               </div>
             </div>
 
             {/* RIGHT */}
-            <div className="ml-auto flex items-center gap-1.5 ">
+            <div className="ml-auto flex items-center gap-1.5">
               <span
-                className={`hidden items-center gap-1 rounded-full border px-2 py-1 text-[10px] sm:flex ${
-                  darkMode
+                className={`hidden items-center gap-1 rounded-full border px-2 py-1 text-[10px] sm:flex ${darkMode
                     ? "border-slate-700 bg-slate-800 text-slate-400"
                     : "border-slate-200 bg-slate-50 text-slate-500"
-                }`}
+                  }`}
               >
                 <IoMdCloudDone size={12} />
                 Available Offline
               </span>
-              <span className="hidden h-4 w-px bg-[#94a3b8]/60 lg:block"></span>
+
+              <span className="hidden h-4 w-px bg-[#94a3b8]/60 lg:block" />
+
               <button
                 onClick={() =>
                   setFontScale((current) =>
-                    current >= 1.15 ? 0.9 : current + 0.1,
+                    current >= 1.15
+                      ? 0.9
+                      : current + 0.1,
                   )
                 }
-                className={`rounded cursor-pointer p-1.5 transition underline text-sm ${
-                  darkMode
+                className={`cursor-pointer rounded p-1.5 text-sm underline transition ${darkMode
                     ? "text-slate-300 hover:bg-slate-800"
                     : "text-slate-500 hover:bg-slate-100"
-                }`}
+                  }`}
                 aria-label="Change font size"
               >
                 A
               </button>
 
               <button
-                onClick={() => setDarkMode((current) => !current)}
-                className={`rounded cursor-pointer p-1.5 transition ${
-                  darkMode
+                onClick={() =>
+                  setDarkMode(
+                    (current) => !current,
+                  )
+                }
+                className={`cursor-pointer rounded p-1.5 transition ${darkMode
                     ? "text-slate-300 hover:bg-slate-800"
                     : "text-slate-500 hover:bg-slate-100"
-                }`}
+                  }`}
                 aria-label="Toggle reader theme"
               >
                 {darkMode ? (
@@ -302,7 +499,7 @@ function WorkersInTrainingReader() {
               </button>
 
               <button
-                className="rounded cursor-pointer p-1.5 text-red-500 hover:bg-red-50"
+                className="cursor-pointer rounded p-1.5 text-red-500 hover:bg-red-50"
                 aria-label="Report"
               >
                 <FiFlag size={12} />
@@ -310,32 +507,30 @@ function WorkersInTrainingReader() {
             </div>
           </div>
         </header>
+
         <div className="flex min-h-screen justify-center px-3 pb-5 pt-20 sm:px-6 lg:px-10">
           <div className="flex w-full max-w-190 flex-col">
             {/* PAPER */}
             <article
-              className={`relative mx-auto min-h-205 w-full overflow-hidden border shadow-[0_2px_10px_rgba(0,0,0,0.045)] sm:min-h-220 ${
-                darkMode
+              className={`relative mx-auto min-h-205 w-full overflow-hidden border shadow-[0_2px_10px_rgba(0,0,0,0.045)] sm:min-h-220 ${darkMode
                   ? "border-slate-700 bg-[#182131]"
                   : "border-slate-200 bg-white"
-              }`}
+                }`}
             >
               {/* CONTENT */}
               <div className="px-7 py-8 sm:px-10 sm:py-11 lg:px-12">
                 {/* HEADING */}
                 <div
-                  className={`border-b pb-3 ${
-                    darkMode
+                  className={`border-b pb-3 ${darkMode
                       ? "border-slate-700"
                       : "border-slate-200"
-                  }`}
+                    }`}
                 >
                   <h2
-                    className={`font-serif text-[20px] font-bold leading-6 sm:text-[22px] ${
-                      darkMode
+                    className={`font-serif text-[20px] font-bold leading-6 sm:text-[22px] ${darkMode
                         ? "text-slate-100"
                         : "text-[#071c49]"
-                    }`}
+                      }`}
                   >
                     {active.title}
                   </h2>
@@ -346,68 +541,69 @@ function WorkersInTrainingReader() {
                   style={{
                     fontSize: `${12 * fontScale}px`,
                   }}
-                  className={`mt-6 font-serif leading-[1.8] ${
-                    darkMode
+                  className={`mt-6 font-serif leading-[1.8] ${darkMode
                       ? "text-slate-300"
                       : "text-slate-700"
-                  }`}
+                    }`}
                 >
                   {activeChapter === 2 ? (
                     <>
                       <p className="mb-5">
-                        The architecture of our faith requires structures
-                        that are both enduring and illuminating. In the
-                        modern era, the sanctuary is not merely a physical
-                        space, but a conceptual environment where spiritual
-                        focus is maintained against the overwhelming noise
-                        of secular distraction.
+                        The architecture of our faith requires
+                        structures that are both enduring and
+                        illuminating. In the modern era, the
+                        sanctuary is not merely a physical space,
+                        but a conceptual environment where spiritual
+                        focus is maintained against the overwhelming
+                        noise of secular distraction.
                       </p>
 
                       <p className="mb-5">
-                        Precision in our approach signifies reverence. It
-                        is the understanding that order and clarity in
-                        administration, worship, and study reflect the
-                        Divine order. When we engage with sacred texts, the
-                        medium through which we receive them must honor the
-                        weight of the message. It must foster a sanctuary
+                        Precision in our approach signifies
+                        reverence. It is the understanding that
+                        order and clarity in administration, worship,
+                        and study reflect the Divine order. When we
+                        engage with sacred texts, the medium through
+                        which we receive them must honor the weight
+                        of the message. It must foster a sanctuary
                         of focus.
                       </p>
 
-                      {/* QUOTE */}
                       <blockquote
-                        className={`my-7 border-l-2 border-[#f2c65b] px-5 py-5 ${
-                          darkMode
+                        className={`my-7 border-l-2 border-[#f2c65b] px-5 py-5 ${darkMode
                             ? "bg-[#202b3b]"
                             : "bg-[#fafafa]"
-                        }`}
+                          }`}
                       >
                         <p
-                          className={`font-serif text-[11px] italic leading-5 ${
-                            darkMode
+                          className={`font-serif text-[11px] italic leading-5 ${darkMode
                               ? "text-slate-400"
                               : "text-slate-600"
-                          }`}
+                            }`}
                         >
-                          "The mind, when directed toward the sacred, must
-                          be unburdened by the trivialities of poor design."
+                          "The mind, when directed toward the
+                          sacred, must be unburdened by the
+                          trivialities of poor design."
                         </p>
                       </blockquote>
 
                       <p className="mb-5">
-                        This principle extends into our digital presence.
-                        The European Universalism we strive for demands
-                        accessibility across diverse congregations, yet it
-                        insists on a unified, fortified trust. Data,
-                        representing the spiritual history and identity of
-                        our members, is guarded with the utmost security.
+                        This principle extends into our digital
+                        presence. The European Universalism we
+                        strive for demands accessibility across
+                        diverse congregations, yet it insists on a
+                        unified, fortified trust. Data, representing
+                        the spiritual history and identity of our
+                        members, is guarded with the utmost security.
                       </p>
 
                       <p className="mb-5">
                         Therefore, the tools we build are not merely
-                        functional; they are extensions of our liturgical
-                        precision. They balance the aesthetic of the
-                        corporate and modern with the deep necessity for
-                        spiritual peace and exclusivity.
+                        functional; they are extensions of our
+                        liturgical precision. They balance the
+                        aesthetic of the corporate and modern with
+                        the deep necessity for spiritual peace and
+                        exclusivity.
                       </p>
                     </>
                   ) : (
@@ -418,13 +614,15 @@ function WorkersInTrainingReader() {
                       </p>
 
                       <p className="mb-5">
-                        The document reader is designed to present the
-                        material in a clean, focused reading environment.
+                        The document reader is designed to present
+                        the material in a clean, focused reading
+                        environment.
                       </p>
 
                       <p>
-                        Additional pages and chapter content can be loaded
-                        from your backend or document storage system.
+                        Additional pages and chapter content can be
+                        loaded from your backend or document storage
+                        system.
                       </p>
                     </>
                   )}
@@ -433,16 +631,15 @@ function WorkersInTrainingReader() {
 
               {/* PAGE FOOTER */}
               <div
-                className={`absolute bottom-7 left-0 right-0 flex items-center justify-between px-7 sm:px-10 lg:px-12 ${
-                  darkMode
+                className={`absolute bottom-7 left-0 right-0 flex items-center justify-between px-7 sm:px-10 lg:px-12 ${darkMode
                     ? "text-slate-500"
                     : "text-slate-400"
-                }`}
+                  }`}
               >
                 <button
                   onClick={previousPage}
                   disabled={activeChapter === 0}
-                  className="flex items-center gap-1 font-serif text-[9px] text-[#071c49] transition hover:underline disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
+                  className="flex cursor-pointer items-center gap-1 font-serif text-[9px] text-[#071c49] transition hover:underline disabled:cursor-not-allowed disabled:opacity-30"
                 >
                   <FiChevronLeft size={9} />
                   Previous Page
@@ -455,9 +652,10 @@ function WorkersInTrainingReader() {
                 <button
                   onClick={nextPage}
                   disabled={
-                    activeChapter === chapters.length - 1
+                    activeChapter ===
+                    chapters.length - 1
                   }
-                  className="flex items-center gap-1 font-serif text-[9px] text-[#071c49] transition hover:underline disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
+                  className="flex cursor-pointer items-center gap-1 font-serif text-[9px] text-[#071c49] transition hover:underline disabled:cursor-not-allowed disabled:opacity-30"
                 >
                   Next Page
                   <FiChevronRight size={9} />
@@ -479,32 +677,31 @@ function WorkersInTrainingReader() {
         </div>
       </section>
 
-      {/* ============================================================
-          MOBILE TABLE OF CONTENTS
-      ============================================================ */}
+      {/* MOBILE TABLE OF CONTENTS */}
       {showMobileToc && (
         <div className="fixed inset-0 z-100 lg:hidden">
           {/* OVERLAY */}
           <button
-            onClick={() => setShowMobileToc(false)}
+            onClick={() =>
+              setShowMobileToc(false)
+            }
             className="absolute inset-0 bg-black/35"
             aria-label="Close table of contents"
           />
+
           <aside
-            className={`absolute bottom-0 left-0 top-0 w-72.5 border-r bg-white shadow-2xl ${
-              darkMode
+            className={`absolute bottom-0 left-0 top-0 w-72.5 border-r bg-white shadow-2xl ${darkMode
                 ? "border-slate-700 bg-[#172033]"
                 : "border-slate-200"
-            }`}
+              }`}
           >
             <div
-              className={`flex h-14 items-center justify-between border-b px-4 ${
-                darkMode
+              className={`flex h-14 items-center justify-between border-b px-4 ${darkMode
                   ? "border-slate-700"
                   : "border-slate-200"
-              }`}
+                }`}
             >
-              <div className="flex items-center cursor-pointer gap-2">
+              <div className="flex cursor-pointer items-center gap-2">
                 <FiBookOpen size={14} />
 
                 <span className="font-serif text-sm font-bold">
@@ -513,7 +710,9 @@ function WorkersInTrainingReader() {
               </div>
 
               <button
-                onClick={() => setShowMobileToc(false)}
+                onClick={() =>
+                  setShowMobileToc(false)
+                }
                 className="rounded p-1.5 text-slate-500 hover:bg-slate-100"
               >
                 <FiX size={16} />
@@ -522,11 +721,16 @@ function WorkersInTrainingReader() {
 
             <div className="border-b p-3">
               <div className="flex h-9 items-center gap-2 rounded border border-slate-200 px-3">
-                <FiSearch size={13} className="text-slate-400" />
+                <FiSearch
+                  size={13}
+                  className="text-slate-400"
+                />
 
                 <input
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(event) =>
+                    setSearch(event.target.value)
+                  }
                   placeholder="Search inside book..."
                   className="min-w-0 flex-1 bg-transparent text-xs outline-none"
                 />
@@ -542,12 +746,13 @@ function WorkersInTrainingReader() {
                 return (
                   <button
                     key={chapter.id}
-                    onClick={() => goToChapter(index)}
-                    className={`block w-full px-5 py-3 text-left font-serif text-xs ${
-                      activeChapter === index
+                    onClick={() =>
+                      goToChapter(index)
+                    }
+                    className={`block w-full px-5 py-3 text-left font-serif text-xs ${activeChapter === index
                         ? "bg-[#00256f] text-white"
                         : "text-slate-600 hover:bg-slate-100"
-                    }`}
+                      }`}
                   >
                     {chapter.title}
                   </button>
@@ -560,4 +765,5 @@ function WorkersInTrainingReader() {
     </main>
   );
 }
-export default WorkersInTrainingReader;
+
+export default ReaderPage;

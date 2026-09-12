@@ -4,8 +4,10 @@ import { db } from "@/src/prisma/db";
 export async function POST(request: Request) {
     try {
         const body = await request.json();
+
         const {
             title,
+            slug,
             subtitle,
             price,
             tag,
@@ -15,11 +17,12 @@ export async function POST(request: Request) {
             imageUrl,
         } = body;
 
-        if (!title || !subtitle || !type || !action) {
+        if (!title || !slug || !subtitle || !type || !action) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: "Title, subtitle, type, and action are required.",
+                    message:
+                        "Title, slug, subtitle, type, and action are required.",
                 },
                 { status: 400 }
             );
@@ -27,6 +30,7 @@ export async function POST(request: Request) {
 
         const material = await db.orm.public.Material.create({
             title,
+            slug,
             subtitle,
             price: price || null,
             tag: tag || null,
@@ -35,6 +39,7 @@ export async function POST(request: Request) {
             href: href || null,
             imageUrl: imageUrl || null,
         });
+
         return NextResponse.json(
             {
                 success: true,

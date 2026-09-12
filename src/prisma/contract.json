@@ -28,6 +28,10 @@
       "model": "Post",
       "namespace": "public"
     },
+    "readingProgress": {
+      "model": "ReadingProgress",
+      "namespace": "public"
+    },
     "session": {
       "model": "Session",
       "namespace": "public"
@@ -269,6 +273,13 @@
                   "kind": "scalar"
                 }
               },
+              "slug": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "subtitle": {
                 "nullable": false,
                 "type": {
@@ -335,6 +346,21 @@
                   "model": "OrderItem",
                   "namespace": "public"
                 }
+              },
+              "readingProgress": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "materialId"
+                  ]
+                },
+                "to": {
+                  "model": "ReadingProgress",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -356,6 +382,9 @@
                 },
                 "price": {
                   "column": "price"
+                },
+                "slug": {
+                  "column": "slug"
                 },
                 "subtitle": {
                   "column": "subtitle"
@@ -728,6 +757,138 @@
               "table": "post"
             }
           },
+          "ReadingProgress": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "currentPage": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "lastReadAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "materialId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "progress": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "totalPages": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "userId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "material": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "materialId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Material",
+                  "namespace": "public"
+                }
+              },
+              "user": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "userId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "currentPage": {
+                  "column": "currentPage"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "lastReadAt": {
+                  "column": "lastReadAt"
+                },
+                "materialId": {
+                  "column": "materialId"
+                },
+                "progress": {
+                  "column": "progress"
+                },
+                "totalPages": {
+                  "column": "totalPages"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                },
+                "userId": {
+                  "column": "userId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "readingProgress"
+            }
+          },
           "Session": {
             "fields": {
               "createdAt": {
@@ -890,6 +1051,21 @@
                 },
                 "to": {
                   "model": "Post",
+                  "namespace": "public"
+                }
+              },
+              "readingProgress": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "userId"
+                  ]
+                },
+                "to": {
+                  "model": "ReadingProgress",
                   "namespace": "public"
                 }
               },
@@ -1160,6 +1336,11 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "slug": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "subtitle": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -1193,7 +1374,13 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "slug"
+                  ]
+                }
+              ]
             },
             "order": {
               "columns": {
@@ -1481,6 +1668,140 @@
               },
               "uniques": []
             },
+            "readingProgress": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "currentPage": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 1
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "lastReadAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "materialId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "progress": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "totalPages": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "userId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "userId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "readingProgress"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "user"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "materialId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "readingProgress"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "material"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "materialId"
+                  ],
+                  "name": "readingProgress_materialId_idx_e0f85a6d",
+                  "prefix": "readingProgress_materialId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "userId"
+                  ],
+                  "name": "readingProgress_userId_idx_a489d58a",
+                  "prefix": "readingProgress_userId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "userId",
+                    "materialId"
+                  ]
+                }
+              ]
+            },
             "session": {
               "columns": {
                 "createdAt": {
@@ -1610,10 +1931,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d22db06bb264b3c2334cc4830924912ac17f1579eb2c1aee93a7dac485c081af"
+    "storageHash": "0fe9ca927eee16f31b60cdac568a78dec622ef5d246e2f0dd83d1e748d67b5a3"
   },
   "execution": {
-    "executionHash": "baad1974e9460c8e8502b50c4daa369c78f51eb8951cb817d1bfcbdc3a810cad",
+    "executionHash": "c808fc322626d87f62e5d4f859a44fb2bc943850afefcfd55274bc7c74f0eebb",
     "mutations": {
       "defaults": [
         {
@@ -1704,6 +2025,21 @@
             "column": "updatedAt",
             "namespace": "public",
             "table": "post"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
+            "namespace": "public",
+            "table": "readingProgress"
           }
         },
         {

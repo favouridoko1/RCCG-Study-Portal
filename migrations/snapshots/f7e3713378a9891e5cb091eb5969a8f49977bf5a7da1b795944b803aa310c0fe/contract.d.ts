@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'0fe9ca927eee16f31b60cdac568a78dec622ef5d246e2f0dd83d1e748d67b5a3'>;
+  StorageHashBase<'f7e3713378a9891e5cb091eb5969a8f49977bf5a7da1b795944b803aa310c0fe'>;
 export type ExecutionHash =
   ExecutionHashBase<'c808fc322626d87f62e5d4f859a44fb2bc943850afefcfd55274bc7c74f0eebb'>;
 export type ProfileHash =
@@ -258,7 +258,6 @@ export type FieldOutputTypes = {
     readonly Material: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly title: CodecTypes['pg/text@1']['output'];
-      readonly slug: CodecTypes['pg/text@1']['output'] | null;
       readonly subtitle: CodecTypes['pg/text@1']['output'];
       readonly price: CodecTypes['pg/text@1']['output'] | null;
       readonly tag: CodecTypes['pg/text@1']['output'] | null;
@@ -346,7 +345,6 @@ export type FieldInputTypes = {
     readonly Material: {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly title: CodecTypes['pg/text@1']['input'];
-      readonly slug: CodecTypes['pg/text@1']['input'] | null;
       readonly subtitle: CodecTypes['pg/text@1']['input'];
       readonly price: CodecTypes['pg/text@1']['input'] | null;
       readonly tag: CodecTypes['pg/text@1']['input'] | null;
@@ -438,7 +436,6 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly imageUrl: CodecTypes['pg/text@1']['output'] | null;
       readonly price: CodecTypes['pg/text@1']['output'] | null;
-      readonly slug: CodecTypes['pg/text@1']['output'] | null;
       readonly subtitle: CodecTypes['pg/text@1']['output'];
       readonly tag: CodecTypes['pg/text@1']['output'] | null;
       readonly title: CodecTypes['pg/text@1']['output'];
@@ -526,7 +523,6 @@ export type StorageColumnInputTypes = {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly imageUrl: CodecTypes['pg/text@1']['input'] | null;
       readonly price: CodecTypes['pg/text@1']['input'] | null;
-      readonly slug: CodecTypes['pg/text@1']['input'] | null;
       readonly subtitle: CodecTypes['pg/text@1']['input'];
       readonly tag: CodecTypes['pg/text@1']['input'] | null;
       readonly title: CodecTypes['pg/text@1']['input'];
@@ -756,11 +752,6 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                 };
-                readonly slug: {
-                  readonly nativeType: 'text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: true;
-                };
                 readonly subtitle: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -809,7 +800,7 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [{ readonly columns: readonly ['slug'] }];
+              uniques: readonly [];
               indexes: readonly [];
               foreignKeys: readonly [];
             };
@@ -1418,10 +1409,6 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
-              readonly slug: {
-                readonly nullable: true;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
               readonly subtitle: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -1506,7 +1493,6 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly id: { readonly column: 'id' };
                 readonly title: { readonly column: 'title' };
-                readonly slug: { readonly column: 'slug' };
                 readonly subtitle: { readonly column: 'subtitle' };
                 readonly price: { readonly column: 'price' };
                 readonly tag: { readonly column: 'tag' };

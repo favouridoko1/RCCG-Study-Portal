@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import Loading from "../reuseable/Loading";
 import Sidebar from "../component/Sidebar";
 import Navbar from "../component/Navbar";
 import {
@@ -283,7 +285,7 @@ function MyShelfPage() {
                             {shelfMaterials.map((material) => (
                                 <article
                                     key={material.id}
-                                    className="overflow-hidden rounded-[4px] border border-slate-300 bg-white"
+                                    className="overflow-hidden rounded-sm border border-slate-300 bg-white"
                                 >
                                     <ShelfCover type={material.type} />
 
@@ -302,7 +304,7 @@ function MyShelfPage() {
                             {/* GET MORE BOOKS */}
                             <button
                                 onClick={() => router.push("/")}
-                                className="group flex min-h-52 flex-col items-center justify-center rounded-[4px] border border-dashed border-slate-400 bg-transparent transition hover:border-[#00256f] hover:bg-white"
+                                className="group flex min-h-52 flex-col items-center justify-center rounded-sm border border-dashed border-slate-400 bg-transparent transition hover:border-[#00256f] hover:bg-white"
                             >
                                 <span className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-400 text-slate-500 transition group-hover:border-[#00256f] group-hover:text-[#00256f]">
                                     +
