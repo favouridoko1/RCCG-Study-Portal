@@ -2,10 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { IoBookOutline } from "react-icons/io5";
+import { toast } from "sonner";
 import { useCartStore } from "../../store/cartStore";
 import MaterialImage, { Material } from "./MaterialImage";
 
- function MaterialCard({
+function MaterialCard({
   material,
 }: {
   material: Material;
@@ -13,19 +14,52 @@ import MaterialImage, { Material } from "./MaterialImage";
   const router = useRouter();
   const addToCart = useCartStore((state) => state.addToCart);
 
-  const handleAction = () => {
+  const handleAction = async () => {
     if (material.action === "Read Now" && material.href) {
       router.push(material.href);
       return;
     }
 
     if (material.action === "Add to Cart") {
-      addToCart({
-        title: material.title,
-        subtitle: material.subtitle,
-        price: material.price ?? "",
-        type: material.type,
-      });
+      try {
+        const response = await fetch("/api/cart", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            materialId: material.id,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Unable to add material to cart.");
+        }
+
+        addToCart({
+          title: material.title,
+          subtitle: material.subtitle,
+          price: material.price ?? "",
+          type: material.type,
+        });
+
+        toast.success(
+          data.message === "Material is already in your cart."
+            ? "Already in cart"
+            : "Added to cart",
+          {
+            description: material.title,
+          }
+        );
+      } catch (error) {
+        console.error("Add to cart error:", error);
+
+        toast.error("Unable to add to cart", {
+          description: "Please try again.",
+        });
+      }
     }
   };
 
@@ -71,5 +105,5 @@ import MaterialImage, { Material } from "./MaterialImage";
     </article>
   );
 }
-export default MaterialCard;
 
+export default MaterialCard;

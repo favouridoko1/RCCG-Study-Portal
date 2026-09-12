@@ -43,3 +43,25 @@ model Material {
   createdAt TimestamptzString @default(now())
   updatedAt temporal.updatedAtString()
 }
+
+model Cart {
+  id        Int        @id @default(autoincrement())
+  user      User       @relation(fields: [userId], references: [id])
+  userId    Int        @unique
+  items     CartItem[]
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+}
+
+model CartItem {
+  id         Int      @id @default(autoincrement())
+  cart       Cart     @relation(fields: [cartId], references: [id])
+  cartId     Int
+  material   Material @relation(fields: [materialId], references: [id])
+  materialId Int
+  quantity   Int      @default(1)
+  createdAt  TimestamptzString @default(now())
+  updatedAt  temporal.updatedAtString()
+
+  @@unique([cartId, materialId])
+}
