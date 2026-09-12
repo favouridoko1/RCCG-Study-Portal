@@ -210,3 +210,95 @@ export async function DELETE(request: Request) {
     );
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized",
+        },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+
+    const materialId = Number(body.materialId);
+    const quantity = Number(body.quantity);
+
+    if (!materialId || !quantity) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Material ID and quantity are required.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (quantity < 1) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Quantity must be at least 1.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const cart = await db.orm.public.Cart.first({
+      userId: user.id,
+    });
+
+    if (!cart) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Cart not found.",
+        },
+        { status: 404 }
+      );
+    }
+
+    const cartItem = await db.orm.public.CartItem.first({
+      cartId: cart.id,
+      materialId,
+    });
+
+    if (!cartItem) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Cart item not found.",
+        },
+        { status: 404 }
+      );
+    }
+
+    const updatedItem = await db.orm.public.CartItem
+      .where({ id: cartItem.id })
+      .update({
+        quantity,
+      });
+
+    return NextResponse.json({
+      success: true,
+      message: "Cart quantity updated.",
+      item: updatedItem,
+    });
+  } catch (error) {
+    console.error("Update cart quantity error:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Unable to update cart quantity.",
+      },
+      { status: 500 }
+    );
+  }
+}

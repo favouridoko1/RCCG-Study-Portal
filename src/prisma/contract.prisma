@@ -8,6 +8,8 @@ model User {
   passwordHash String
   posts        Post[]
   sessions     Session[]
+  cart         Cart?
+  orders       Order[]
   createdAt    TimestamptzString @default(now())
   updatedAt    temporal.updatedAtString()
 }
@@ -31,17 +33,19 @@ model Session {
 }
 
 model Material {
-  id        Int      @id @default(autoincrement())
-  title     String
-  subtitle  String
-  price     String?
-  tag       String?
-  type      String
-  action    String
-  href      String?
-  imageUrl  String?
-  createdAt TimestamptzString @default(now())
-  updatedAt temporal.updatedAtString()
+  id          Int      @id @default(autoincrement())
+  title       String
+  subtitle    String
+  price       String?
+  tag         String?
+  type        String
+  action      String
+  href        String?
+  imageUrl    String?
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
 }
 
 model Cart {
@@ -64,4 +68,32 @@ model CartItem {
   updatedAt  temporal.updatedAtString()
 
   @@unique([cartId, materialId])
+}
+
+model Order {
+  id        Int         @id @default(autoincrement())
+  user      User        @relation(fields: [userId], references: [id])
+  userId    Int
+  status    String      @default("pending")
+  firstName String
+  lastName  String
+  email     String
+  phone     String
+  total     String
+  items     OrderItem[]
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+}
+
+model OrderItem {
+  id         Int         @id @default(autoincrement())
+  order      Order       @relation(fields: [orderId], references: [id])
+  orderId    Int
+  material   Material    @relation(fields: [materialId], references: [id])
+  materialId Int
+  title      String
+  price      String
+  quantity   Int
+  createdAt  TimestamptzString @default(now())
+  updatedAt  temporal.updatedAtString()
 }
