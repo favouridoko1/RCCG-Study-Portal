@@ -39,6 +39,7 @@ model Material {
   type      String
   action    String
   href      String?
+  imageUrl  String?
   createdAt TimestamptzString @default(now())
   updatedAt temporal.updatedAtString()
 }
