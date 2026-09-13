@@ -14,30 +14,15 @@ import {
     FiUpload,
 } from "react-icons/fi";
 import { MdOutlineLibraryBooks, MdOutlineMenuBook } from "react-icons/md";
-
-const shelfMaterials = [
-    {
-        id: "sunday-school",
-        title: "Sunday School Guide 2024",
-        subtitle: "Adult Edition 2024",
-        type: "sunday",
-        progress: null,
-    },
-    {
-        id: "workers-training",
-        title: "Workers in Training Manual",
-        subtitle: "Revised Edition",
-        type: "workers",
-        progress: 0,
-    },
-    {
-        id: "open-heavens",
-        title: "Open Heavens 2024",
-        subtitle: "Daily Devotional",
-        type: "open-heavens",
-        progress: null,
-    },
-];
+type ShelfMaterial = {
+    id: number;
+    title: string;
+    subtitle: string;
+    type: string;
+    href: string | null;
+    imageUrl: string | null;
+    purchasedAt: string;
+};
 
 function ShelfCover({ type }: { type: string }) {
     if (type === "sunday") {
@@ -123,6 +108,43 @@ function ShelfCover({ type }: { type: string }) {
 
 function MyShelfPage() {
     const router = useRouter();
+    const [shelfMaterials, setShelfMaterials] = useState<ShelfMaterial[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        const loadShelf = async () => {
+            try {
+                const response = await fetch("/api/shelf");
+
+                if (!response.ok) {
+                    throw new Error("Unable to load your shelf.");
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(
+                        data.message || "Unable to load your shelf."
+                    );
+                }
+
+                setShelfMaterials(data.materials ?? []);
+            } catch (error) {
+                console.error("Load shelf error:", error);
+
+                setError(
+                    error instanceof Error
+                        ? error.message
+                        : "Unable to load your shelf."
+                );
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadShelf();
+    }, []);
 
     const continueReading = {
         title: "House Fellowship Manual 2024",
@@ -139,10 +161,6 @@ function MyShelfPage() {
 
             <div className="ml-0 pb-20 pt-14.5 lg:ml-53.75 lg:pb-0 lg:pt-12">
                 <div className="mx-auto w-full max-w-300 px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
-
-                    {/* =================================================
-                        PAGE HEADER
-                    ================================================= */}
                     <section className="border-b border-slate-300 pb-4">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                             <div>
@@ -168,10 +186,6 @@ function MyShelfPage() {
                             </button>
                         </div>
                     </section>
-
-                    {/* =================================================
-                        CONTINUE READING
-                    ================================================= */}
                     <section className="mt-5">
                         <h2 className="mb-2 text-[17px] font-bold text-[#071c49]">
                             Continue Reading
@@ -259,10 +273,6 @@ function MyShelfPage() {
                             </div>
                         </article>
                     </section>
-
-                    {/* =================================================
-                        ALL MATERIALS
-                    ================================================= */}
                     <section className="mt-6">
                         <div className="flex items-center justify-between">
                             <h2 className="text-[17px] font-bold text-[#071c49]">
@@ -280,41 +290,56 @@ function MyShelfPage() {
                             </div>
                         </div>
 
-                        <div className="mt-2 grid grid-cols-1 gap-3 min-[500px]:grid-cols-2 lg:grid-cols-4">
+                        {isLoading && <Loading message="Loading your shelf..." />}
 
-                            {shelfMaterials.map((material) => (
-                                <article
-                                    key={material.id}
-                                    className="overflow-hidden rounded-sm border border-slate-300 bg-white"
+                        {!isLoading && error && (
+                            <div className="mt-2 rounded-md border border-red-200 bg-white px-5 py-10 text-center">
+                                <h3 className="text-sm font-bold text-[#071c49]">
+                                    Unable to load your shelf
+                                </h3>
+
+                                <p className="mt-1 text-[9px] text-slate-500">
+                                    {error}
+                                </p>
+                            </div>
+                        )}
+
+                        {!isLoading && !error && (
+                            <div className="mt-2 grid grid-cols-1 gap-3 min-[500px]:grid-cols-2 lg:grid-cols-4">
+                                {shelfMaterials.map((material) => (
+                                    <article
+                                        key={material.id}
+                                        className="overflow-hidden rounded-sm border border-slate-300 bg-white"
+                                    >
+                                        <ShelfCover type={material.type} />
+
+                                        <div className="px-2 py-2">
+                                            <h3 className="font-serif text-[9px] font-bold text-[#071c49]">
+                                                {material.title}
+                                            </h3>
+
+                                            <p className="mt-0.5 text-[8px] text-slate-500">
+                                                {material.subtitle}
+                                            </p>
+                                        </div>
+                                    </article>
+                                ))}
+
+                                {/* GET MORE BOOKS */}
+                                <button
+                                    onClick={() => router.push("/")}
+                                    className="group flex min-h-52 flex-col items-center justify-center rounded-sm border border-dashed border-slate-400 bg-transparent transition hover:border-[#00256f] hover:bg-white"
                                 >
-                                    <ShelfCover type={material.type} />
+                                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-400 text-slate-500 transition group-hover:border-[#00256f] group-hover:text-[#00256f]">
+                                        +
+                                    </span>
 
-                                    <div className="px-2 py-2">
-                                        <h3 className="font-serif text-[9px] font-bold text-[#071c49]">
-                                            {material.title}
-                                        </h3>
-
-                                        <p className="mt-0.5 text-[8px] text-slate-500">
-                                            {material.subtitle}
-                                        </p>
-                                    </div>
-                                </article>
-                            ))}
-
-                            {/* GET MORE BOOKS */}
-                            <button
-                                onClick={() => router.push("/")}
-                                className="group flex min-h-52 flex-col items-center justify-center rounded-sm border border-dashed border-slate-400 bg-transparent transition hover:border-[#00256f] hover:bg-white"
-                            >
-                                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-400 text-slate-500 transition group-hover:border-[#00256f] group-hover:text-[#00256f]">
-                                    +
-                                </span>
-
-                                <span className="mt-2 text-[9px] text-slate-500 group-hover:text-[#00256f]">
-                                    Get More Books
-                                </span>
-                            </button>
-                        </div>
+                                    <span className="mt-2 text-[9px] text-slate-500 group-hover:text-[#00256f]">
+                                        Get More Books
+                                    </span>
+                                </button>
+                            </div>
+                        )}
                     </section>
                 </div>
             </div>

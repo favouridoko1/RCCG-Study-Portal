@@ -43,40 +43,46 @@ function page() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
-    const fetchCart = async () => {
-      try {
-        const response = await fetch("/api/cart");
+  const fetchCart = async () => {
+    try {
+      const response = await fetch("/api/cart");
 
-        if (!response.ok) {
-          throw new Error("Failed to load cart");
-        }
-
-        const data = await response.json();
-
-        if (data.success) {
-          const cartItems = data.cart.items ?? [];
-
-          setItems(cartItems);
-
-          setCartItems(
-            cartItems.map((item: CartItem) => ({
-              materialId: item.material.id,
-              title: item.material.title,
-              subtitle: item.material.subtitle,
-              price: item.material.price ?? "",
-              type: item.material.type,
-            }))
-          );
-        }
-      } catch (error) {
-        console.error("Failed to load cart:", error);
-      } finally {
-        setIsLoading(false);
+      if (response.status === 401) {
+        setItems([]);
+        setCartItems([]);
+        return;
       }
-    };
 
-    fetchCart();
-  }, []);
+      if (!response.ok) {
+        throw new Error("Failed to load cart");
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        const cartItems = data.cart.items ?? [];
+
+        setItems(cartItems);
+
+        setCartItems(
+          cartItems.map((item: CartItem) => ({
+            materialId: item.material.id,
+            title: item.material.title,
+            subtitle: item.material.subtitle,
+            price: item.material.price ?? "",
+            type: item.material.type,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Failed to load cart:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchCart();
+}, []);
 
   const updateQuantity = async (
     materialId: number,
@@ -135,7 +141,7 @@ function page() {
 
   if (isLoading) {
     return (
-    <Loading message="Loading cart..." />
+      <Loading message="Loading cart..." />
     );
   }
 
